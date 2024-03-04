@@ -63,7 +63,7 @@ jobs:
                             echo "Updating application service $APP_SERVICE_NAME"
                             docker service update --image $APP_IMAGE_NAME $APP_SERVICE_NAME
                         fi
-                        # Import SQL Database
+                        # Import SQL Databasee
                         echo "Importing SQL Database"
                         docker cp ${{ secrets.SQL_FILE_NAME }} $SQL_SERVICE_NAME:/tmp/${{ secrets.SQL_FILE_NAME }}
                         docker exec $SQL_SERVICE_NAME /bin/bash -c "mysql -u ${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_DATABASE }} < /tmp/${{ secrets.SQL_FILE_NAME }}"
