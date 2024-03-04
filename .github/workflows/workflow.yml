@@ -1,0 +1,72 @@
+name: Continuous Deployment Pipeline
+
+on: push
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Set up QEMU
+                uses: docker/setup-qemu-action@v3
+
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
+            -   name: Login to DockerHub
+                uses: docker/login-action@v3
+                with:
+                    username: ${{ secrets.DOCKER_USERNAME }}
+                    password: ${{ secrets.DOCKER_PASSWORD }}
+
+            -   name: Build and push Docker image
+                uses: docker/build-push-action@v5
+                with:
+                    context: .
+                    push: true
+                    tags: dufi1928/docker-products:latest
+
+    deploy:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            -   name: Deploy to server
+                uses: appleboy/ssh-action@master
+                with:
+                    host: ${{ secrets.HOST }}
+                    username: ${{ secrets.USERNAME }}
+                    key: ${{ secrets.SSH_KEY }}
+                    script: |
+                        # Deploy SQL Database Service
+                        SQL_SERVICE_NAME=sql-service
+                        SQL_IMAGE_NAME=mysql:latest
+                        SQL_SERVICE_EXISTS=$(docker service ls | grep $SQL_SERVICE_NAME || true)
+                        if [ -z "$SQL_SERVICE_EXISTS" ]; then
+                            echo "Creating SQL service $SQL_SERVICE_NAME"
+                            docker service create --name $SQL_SERVICE_NAME --replicas 1 \
+                            --env MYSQL_DATABASE=${{ secrets.DB_DATABASE }} \
+                            --env MYSQL_USER=${{ secrets.DB_USER }} \
+                            --env MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                            --env MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                            --publish published=3306,target=3306 $SQL_IMAGE_NAME
+                        else
+                                echo "SQL service $SQL_SERVICE_NAME already exists"
+                        fi
+                        
+                        # Deploy your application service
+                        APP_SERVICE_NAME=app-service
+                        APP_IMAGE_NAME=dufi1928/docker-products:latest # Remplacez par votre nom d'utilisateur DockerHub et le nom de votre application
+                        APP_SERVICE_EXISTS=$(docker service ls | grep $APP_SERVICE_NAME || true)
+                        if [ -z "$APP_SERVICE_EXISTS" ]; then
+                            echo "Creating application service $APP_SERVICE_NAME"
+                            docker service create --name $APP_SERVICE_NAME --replicas 1 --publish published=80,target=80 $APP_IMAGE_NAME
+                        else
+                            echo "Updating application service $APP_SERVICE_NAME"
+                            docker service update --image $APP_IMAGE_NAME $APP_SERVICE_NAME
+                        fi
+                        # Import SQL Database
+                        echo "Importing SQL Database"
+                        docker cp api_product.sql $SQL_SERVICE_NAME:/tmp/api_product.sql
+                        docker exec $SQL_SERVICE_NAME /bin/bash -c "mysql -u ${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_DATABASE }} < /tmp/api_product.sql"
