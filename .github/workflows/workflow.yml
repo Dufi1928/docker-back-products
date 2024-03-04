@@ -41,23 +41,20 @@ jobs:
                     script: |
                         # Deploy SQL Database Service
                         SQL_SERVICE_NAME=sql-service
-                        SQL_IMAGE_NAME=mysql:latest
                         SQL_SERVICE_EXISTS=$(docker service ls | grep $SQL_SERVICE_NAME || true)
                         if [ -z "$SQL_SERVICE_EXISTS" ]; then
                             echo "Creating SQL service $SQL_SERVICE_NAME"
                             docker service create --name $SQL_SERVICE_NAME --replicas 1 \
                             --env MYSQL_DATABASE=${{ secrets.DB_DATABASE }} \
-                            --env MYSQL_USER=${{ secrets.DB_USER }} \
-                            --env MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
-                            --env MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                            --env MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }} \ # Adjusted line
                             --publish published=3306,target=3306 $SQL_IMAGE_NAME
                         else
-                                echo "SQL service $SQL_SERVICE_NAME already exists"
+                            echo "SQL service $SQL_SERVICE_NAME already exists"
                         fi
                         
                         # Deploy your application service
                         APP_SERVICE_NAME=app-service
-                        APP_IMAGE_NAME=dufi1928/docker-products:latest # Remplacez par votre nom d'utilisateur DockerHub et le nom de votre application
+                        APP_IMAGE_NAME=dufi1928/docker-products:latest 
                         APP_SERVICE_EXISTS=$(docker service ls | grep $APP_SERVICE_NAME || true)
                         if [ -z "$APP_SERVICE_EXISTS" ]; then
                             echo "Creating application service $APP_SERVICE_NAME"
