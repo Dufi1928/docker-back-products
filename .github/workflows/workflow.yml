@@ -68,5 +68,5 @@ jobs:
                         fi
                         # Import SQL Database
                         echo "Importing SQL Database"
-                        docker cp api_product.sql $SQL_SERVICE_NAME:/tmp/api_product.sql
-                        docker exec $SQL_SERVICE_NAME /bin/bash -c "mysql -u ${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_DATABASE }} < /tmp/api_product.sql"
+                        docker cp ${{ secrets.SQL_FILE_NAME }} $SQL_SERVICE_NAME:/tmp/${{ secrets.SQL_FILE_NAME }}
+                        docker exec $SQL_SERVICE_NAME /bin/bash -c "mysql -u ${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} ${{ secrets.DB_DATABASE }} < /tmp/${{ secrets.SQL_FILE_NAME }}"
