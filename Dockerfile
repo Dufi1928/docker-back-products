@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3001
 
 # Commande pour démarrer votre application
-CMD ["node", "index.js"]
+CMD ["npm", "start"]
