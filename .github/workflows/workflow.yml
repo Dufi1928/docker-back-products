@@ -40,7 +40,7 @@ jobs:
                     key: ${{ secrets.SSH_KEY }}
                     script: |
                         # Deploy SQL Database Service
-                        SQL_SERVICE_NAME=sql-service
+                        SQL_SERVICE_NAME=mysql:latest
                         SQL_SERVICE_EXISTS=$(docker service ls | grep $SQL_SERVICE_NAME || true)
                         if [ -z "$SQL_SERVICE_EXISTS" ]; then
                             echo "Creating SQL service $SQL_SERVICE_NAME"
